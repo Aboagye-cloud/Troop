@@ -1,40 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Troop</title>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        button { padding: 10px 20px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h1>Welcome to Troop</h1>
-        <p id="api-status">API Status: Checking...</p>
-        <button onclick="checkApi()">Ping API</button>
-    </div>
+const express = require("express");
+const cors = require("cors");
+const { GoogleGenAI } = require("@google/genai");
 
-    <script>
-        // We will update this URL once the backend is live on Vercel
-        const API_URL = "YOUR_VERCEL_BACKEND_URL_HERE";
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-        async function checkApi() {
-            const statusText = document.getElementById("api-status");
-            if (API_URL === "YOUR_VERCEL_BACKEND_URL_HERE") {
-                statusText.innerText = "Please update API_URL in script with your Vercel URL.";
-                return;
-            }
-            try {
-                const response = await fetch(`${API_URL}/api/status`);
-                const data = await response.json();
-                statusText.innerText = `Status: ${data.status} | ${data.message}`;
-            } catch (err) {
-                statusText.innerText = "Error connecting to API";
-            }
-        }
-    </script>
-</body>
-</html>
+// Reads GEMINI_API_KEY set in Vercel environment variables
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+app.post("/api/generate", async (req, res) => {
+  const { prompt } = req.body;
+
+  if (!prompt) {
+    return res.status(400).json({ error: "Prompt is required." });
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    res.json({ result: response.text });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to generate AI response." });
+  }
+});
+
+module.exports = app;
