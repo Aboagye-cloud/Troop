@@ -21,12 +21,12 @@ app.post("/api/generate", async (req, res) => {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // Inject current server/UTC date context into the prompt request
+    // Pass the real-time UTC timestamp so the model knows the accurate date
     const currentDate = new Date().toUTCString();
-    const contextualPrompt = `[System Info: Current real-time UTC timestamp is ${currentDate}]\n\nUser Question: ${prompt}`;
+    const contextualPrompt = `[System Context: Current UTC time is ${currentDate}]\n\nUser Prompt: ${prompt}`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.6-flash",
       contents: contextualPrompt,
     });
 
