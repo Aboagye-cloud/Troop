@@ -6,9 +6,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize the Gemini client using the environment key saved in Vercel
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 app.post("/api/generate", async (req, res) => {
   const { prompt } = req.body;
 
@@ -17,15 +14,24 @@ app.post("/api/generate", async (req, res) => {
   }
 
   try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "GEMINI_API_KEY is missing in Vercel environment variables." });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+    
+    // Using standard production model name
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-flash",
       contents: prompt,
     });
 
     res.json({ result: response.text });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to generate AI response." });
+    console.error("Gemini Error:", error);
+    // Returns the exact error details to your webpage
+    res.status(500).json({ error: error.message || String(error) });
   }
 });
 
