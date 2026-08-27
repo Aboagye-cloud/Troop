@@ -1,16 +1,32 @@
 const express = require("express");
 const cors = require("cors");
+const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/api/status", (req, res) => {
-  res.json({
-    message: "Welcome to Troop API!",
-    status: "Active",
-    timestamp: new Date().toISOString()
-  });
+// Initialize the Gemini client using the environment key saved in Vercel
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+app.post("/api/generate", async (req, res) => {
+  const { prompt } = req.body;
+
+  if (!prompt) {
+    return res.status(400).json({ error: "Prompt is required." });
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    res.json({ result: response.text });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to generate AI response." });
+  }
 });
 
 module.exports = app;
