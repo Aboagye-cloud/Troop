@@ -3,31 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Troop</title>
+    <title>Troop AI</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        button { padding: 10px 20px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 650px;
+            margin: 60px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        h1 { margin-top: 0; font-size: 1.8rem; }
+        textarea {
+            width: 100%;
+            height: 120px;
+            margin: 15px 0;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        button {
+            padding: 12px 24px;
+            background-color: #0070f3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover { background-color: #0051a2; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .output {
+            margin-top: 25px;
+            padding: 18px;
+            background-color: #f1f3f5;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Welcome to Troop</h1>
-        <p id="api-status">API Status: Checking...</p>
-        <button onclick="checkApi()">Ping API</button>
+    <div class="container">
+        <h1>Troop AI</h1>
+        <p>Ask anything below to generate a response instantly:</p>
+        
+        <textarea id="promptInput" placeholder="Type your prompt or query here..."></textarea>
+        <button id="submitBtn" onclick="sendPrompt()">Submit Prompt</button>
+
+        <div class="output" id="outputResult">Your response will appear here...</div>
     </div>
 
     <script>
         const API_URL = "https://troop-iota.vercel.app";
 
-        async function checkApi() {
-            const statusText = document.getElementById("api-status");
+        async function sendPrompt() {
+            const promptInput = document.getElementById("promptInput");
+            const outputResult = document.getElementById("outputResult");
+            const submitBtn = document.getElementById("submitBtn");
+
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                outputResult.innerText = "Please enter a prompt first.";
+                return;
+            }
+
+            outputResult.innerText = "Generating response from Gemini...";
+            submitBtn.disabled = true;
+
             try {
-                const response = await fetch(`${API_URL}/api/status`);
+                const response = await fetch(`${API_URL}/api/generate`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
                 const data = await response.json();
-                statusText.innerText = `Status: ${data.status} | ${data.message}`;
+
+                if (data.result) {
+                    outputResult.innerText = data.result;
+                } else {
+                    outputResult.innerText = "Error: " + (data.error || "Failed to parse response.");
+                }
             } catch (err) {
-                statusText.innerText = "Error connecting to API";
+                outputResult.innerText = "Error connecting to the server. Check Vercel logs.";
+            } finally {
+                submitBtn.disabled = false;
             }
         }
     </script>
