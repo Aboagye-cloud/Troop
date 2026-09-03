@@ -40,6 +40,7 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            overflow: hidden;
         }
 
         .app-container {
@@ -50,8 +51,29 @@
             border-radius: 16px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             display: flex;
+            position: relative;
             overflow: hidden;
             border: 1px solid var(--border-color);
+        }
+
+        /* Backdrop Overlay for Mobile Drawer */
+        .sidebar-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
         }
 
         /* Sidebar for Chat History */
@@ -63,6 +85,23 @@
             flex-direction: column;
             padding: 16px;
             user-select: none;
+            z-index: 20;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header-mobile {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .close-sidebar-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
         }
 
         .new-chat-btn {
@@ -169,6 +208,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            position: relative;
         }
 
         /* Header */
@@ -181,6 +221,22 @@
             align-items: center;
             justify-content: space-between;
             user-select: none;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-toggle-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px;
         }
 
         .brand-title h1 {
@@ -202,7 +258,7 @@
             color: var(--text-secondary);
         }
 
-        /* Messages */
+        /* Messages List */
         .messages-list {
             flex: 1;
             padding: 24px;
@@ -232,7 +288,6 @@
             animation: fadeIn 0.2s ease-in-out;
         }
 
-        /* Render Markdown Styles Cleanly */
         .message p { margin-bottom: 8px; }
         .message p:last-child { margin-bottom: 0; }
         .message ul, .message ol { margin-left: 20px; margin-bottom: 8px; }
@@ -400,16 +455,49 @@
         button.send-btn:hover { background-color: var(--teal-hover); }
         button.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
+        /* Responsive Styles for Mobile and Tablets */
+        @media (max-width: 1024px) {
+            body { padding: 0; }
+            .app-container { height: 100vh; border-radius: 0; border: none; }
+            .menu-toggle-btn { display: block; }
+
+            .sidebar {
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                transform: translateX(-100%);
+                box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-header-mobile {
+                display: flex;
+            }
+
+            .message-wrapper {
+                max-width: 90%;
+            }
         }
     </style>
 </head>
 <body>
 
     <div class="app-container">
+        <!-- Backdrop Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
         <!-- History Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header-mobile">
+                <span class="history-title">Menu</span>
+                <button class="close-sidebar-btn" onclick="toggleSidebar(false)">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
             <button class="new-chat-btn" onclick="startNewChat()">
                 <i class="fa-solid fa-plus"></i> New Chat
             </button>
@@ -424,9 +512,14 @@
         <div class="chat-main">
             <!-- Header -->
             <div class="chat-header">
-                <div class="brand-title">
-                    <h1>Troop AI</h1>
-                    <span class="subtitle">created by Aboagye</span>
+                <div class="header-left">
+                    <button class="menu-toggle-btn" onclick="toggleSidebar(true)" title="Open History">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="brand-title">
+                        <h1>Troop AI</h1>
+                        <span class="subtitle">created by Aboagye</span>
+                    </div>
                 </div>
                 <span class="status">Powered by Gemini</span>
             </div>
@@ -467,12 +560,25 @@
         const imageInput = document.getElementById("imageInput");
         const imagePreviewContainer = document.getElementById("imagePreviewContainer");
         const imagePreview = document.getElementById("imagePreview");
+        const sidebar = document.getElementById("sidebar");
+        const sidebarOverlay = document.getElementById("sidebarOverlay");
 
         let currentSessionId = Date.now();
         let chatHistory = JSON.parse(localStorage.getItem("troop_history")) || {};
         let selectedBase64Image = null;
 
-        // Auto-expand input & Enter-to-send listener
+        // Mobile Sidebar Slide Drawer Toggle
+        function toggleSidebar(open) {
+            if (open) {
+                sidebar.classList.add("open");
+                sidebarOverlay.classList.add("active");
+            } else {
+                sidebar.classList.remove("open");
+                sidebarOverlay.classList.remove("active");
+            }
+        }
+
+        // Auto-expand textarea & Enter-to-send listener
         promptInput.addEventListener("input", function() {
             this.style.height = "auto";
             this.style.height = (this.scrollHeight) + "px";
@@ -570,7 +676,6 @@
 
             if (text) {
                 const contentDiv = document.createElement("div");
-                // Parse markdown into HTML for AI, keep plain text for User
                 if (sender === 'ai') {
                     contentDiv.innerHTML = marked.parse(text);
                 } else {
@@ -621,7 +726,7 @@
             chatList.scrollTop = chatList.scrollHeight;
         }
 
-        /* History Management */
+        /* History Functions */
         function saveToHistory(sender, text, image = null) {
             if (!chatHistory[currentSessionId]) {
                 chatHistory[currentSessionId] = {
@@ -661,6 +766,7 @@
                 session.messages.forEach(msg => appendMessage(msg.text, msg.sender, msg.image));
             }
             renderHistoryList();
+            toggleSidebar(false); // Close sidebar after selecting a chat on mobile
         }
 
         function startNewChat() {
@@ -671,6 +777,7 @@
                 </div>
             `;
             renderHistoryList();
+            toggleSidebar(false); // Close sidebar on mobile
         }
 
         function deleteSession(event, id) {
