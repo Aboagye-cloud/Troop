@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Troop AI</title>
     <!-- Google Fonts, Icons, & Marked.js for Markdown Rendering -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -32,15 +32,19 @@
             user-select: text;
         }
 
-        body {
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             background-color: var(--bg-color);
             color: var(--text-color);
-            height: 100vh;
+        }
+
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
-            overflow: hidden;
         }
 
         .app-container {
@@ -87,6 +91,7 @@
             user-select: none;
             z-index: 20;
             transition: transform 0.3s ease;
+            flex-shrink: 0;
         }
 
         .sidebar-header-mobile {
@@ -102,6 +107,7 @@
             color: var(--text-secondary);
             font-size: 1.2rem;
             cursor: pointer;
+            padding: 8px;
         }
 
         .new-chat-btn {
@@ -208,19 +214,22 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            width: 100%;
             position: relative;
+            overflow: hidden;
         }
 
         /* Header */
         .chat-header {
-            padding: 16px 24px;
-            background: rgba(15, 23, 42, 0.6);
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: space-between;
             user-select: none;
+            flex-shrink: 0;
         }
 
         .header-left {
@@ -236,68 +245,71 @@
             color: var(--text-color);
             font-size: 1.2rem;
             cursor: pointer;
-            padding: 4px;
+            padding: 6px;
         }
 
         .brand-title h1 {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 700;
             color: var(--teal-accent);
             line-height: 1.1;
         }
 
         .brand-title .subtitle {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-secondary);
             margin-top: 2px;
             font-weight: 500;
         }
 
         .status {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
         }
 
         /* Messages List */
         .messages-list {
             flex: 1;
-            padding: 24px;
+            padding: 16px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 16px;
             scroll-behavior: smooth;
+            width: 100%;
         }
 
         .message-wrapper {
             display: flex;
             flex-direction: column;
-            max-width: 80%;
+            max-width: 85%;
         }
 
         .message-wrapper.user { align-self: flex-end; }
         .message-wrapper.ai { align-self: flex-start; }
 
         .message {
-            padding: 12px 18px;
+            padding: 12px 16px;
             border-radius: 14px;
-            line-height: 1.6;
+            line-height: 1.5;
             font-size: 0.95rem;
-            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: anywhere;
             position: relative;
             animation: fadeIn 0.2s ease-in-out;
         }
 
         .message p { margin-bottom: 8px; }
         .message p:last-child { margin-bottom: 0; }
-        .message ul, .message ol { margin-left: 20px; margin-bottom: 8px; }
+        .message ul, .message ol { margin-left: 18px; margin-bottom: 8px; }
         .message strong { font-weight: 600; color: #ffffff; }
 
         .message img {
             max-width: 100%;
-            max-height: 250px;
+            max-height: 220px;
             border-radius: 8px;
             margin-bottom: 8px;
+            object-fit: contain;
         }
 
         .message.user {
@@ -328,6 +340,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
+            padding: 2px 4px;
             transition: color 0.2s ease;
         }
 
@@ -338,7 +351,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 12px 18px;
+            padding: 12px 16px;
             background-color: var(--ai-msg);
             border-radius: 14px;
             border-bottom-left-radius: 2px;
@@ -364,10 +377,11 @@
         /* Image Preview Box */
         .image-preview-container {
             display: none;
-            padding: 8px 20px 0;
-            background: rgba(15, 23, 42, 0.6);
+            padding: 8px 16px 0;
+            background: rgba(15, 23, 42, 0.8);
             align-items: center;
             gap: 10px;
+            flex-shrink: 0;
         }
 
         .image-preview-wrapper {
@@ -376,8 +390,8 @@
         }
 
         .image-preview-wrapper img {
-            width: 50px;
-            height: 50px;
+            width: 48px;
+            height: 48px;
             object-fit: cover;
             border-radius: 6px;
             border: 1px solid var(--border-color);
@@ -397,23 +411,26 @@
             cursor: pointer;
         }
 
-        /* Input Area */
+        /* Input Area - Fixed for Mobile */
         .input-area {
-            padding: 16px 20px;
-            background: rgba(15, 23, 42, 0.6);
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(10px);
             border-top: 1px solid var(--border-color);
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
+            width: 100%;
+            flex-shrink: 0;
         }
 
         .file-upload-label {
             color: var(--text-secondary);
             cursor: pointer;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
             transition: color 0.2s ease, background 0.2s ease;
+            flex-shrink: 0;
         }
 
         .file-upload-label:hover {
@@ -425,14 +442,15 @@
 
         textarea {
             flex: 1;
+            min-width: 0;
             background: var(--input-bg);
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            padding: 12px 16px;
+            padding: 10px 14px;
             color: var(--text-color);
             font-size: 0.95rem;
             resize: none;
-            max-height: 120px;
+            max-height: 100px;
             outline: none;
             transition: border-color 0.2s ease;
         }
@@ -440,32 +458,47 @@
         textarea:focus { border-color: var(--teal-accent); }
 
         button.send-btn {
-            padding: 0 20px;
-            height: 44px;
+            padding: 0 16px;
+            height: 42px;
             background-color: var(--teal-accent);
             color: #0f172a;
             border: none;
             border-radius: 10px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
+            flex-shrink: 0;
             transition: background 0.2s ease;
         }
 
         button.send-btn:hover { background-color: var(--teal-hover); }
         button.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Responsive Styles for Mobile and Tablets */
+        /* Mobile and Tablet Specific Rules */
         @media (max-width: 1024px) {
-            body { padding: 0; }
-            .app-container { height: 100vh; border-radius: 0; border: none; }
-            .menu-toggle-btn { display: block; }
+            body {
+                padding: 0;
+                height: 100dvh;
+            }
+
+            .app-container {
+                height: 100dvh;
+                width: 100vw;
+                border-radius: 0;
+                border: none;
+            }
+
+            .menu-toggle-btn {
+                display: block;
+            }
 
             .sidebar {
                 position: absolute;
                 top: 0;
                 left: 0;
                 height: 100%;
+                width: 280px;
+                max-width: 80vw;
                 transform: translateX(-100%);
                 box-shadow: 5px 0 15px rgba(0,0,0,0.5);
             }
@@ -545,7 +578,7 @@
                     <i class="fa-solid fa-paperclip"></i>
                 </label>
                 <input type="file" id="imageInput" accept="image/*" onchange="handleImageSelect(event)">
-                <textarea id="promptInput" placeholder="Type a message or upload an image..." rows="1"></textarea>
+                <textarea id="promptInput" placeholder="Type a message..." rows="1"></textarea>
                 <button class="send-btn" id="submitBtn" onclick="sendPrompt()">Send</button>
             </div>
         </div>
@@ -766,7 +799,7 @@
                 session.messages.forEach(msg => appendMessage(msg.text, msg.sender, msg.image));
             }
             renderHistoryList();
-            toggleSidebar(false); // Close sidebar after selecting a chat on mobile
+            toggleSidebar(false);
         }
 
         function startNewChat() {
@@ -777,7 +810,7 @@
                 </div>
             `;
             renderHistoryList();
-            toggleSidebar(false); // Close sidebar on mobile
+            toggleSidebar(false);
         }
 
         function deleteSession(event, id) {
