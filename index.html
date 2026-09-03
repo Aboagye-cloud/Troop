@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Troop AI</title>
-    <!-- Google Fonts & FontAwesome Icons -->
+    <!-- Google Fonts, Icons, & Marked.js for Markdown Rendering -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -28,7 +29,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            user-select: text; /* Ensures full text copy capability */
+            user-select: text;
         }
 
         body {
@@ -227,10 +228,15 @@
             line-height: 1.6;
             font-size: 0.95rem;
             word-wrap: break-word;
-            white-space: pre-wrap;
             position: relative;
             animation: fadeIn 0.2s ease-in-out;
         }
+
+        /* Render Markdown Styles Cleanly */
+        .message p { margin-bottom: 8px; }
+        .message p:last-child { margin-bottom: 0; }
+        .message ul, .message ol { margin-left: 20px; margin-bottom: 8px; }
+        .message strong { font-weight: 600; color: #ffffff; }
 
         .message img {
             max-width: 100%;
@@ -432,7 +438,7 @@
                 </div>
             </div>
 
-            <!-- Image Preview Area -->
+            <!-- Image Preview Box -->
             <div class="image-preview-container" id="imagePreviewContainer">
                 <div class="image-preview-wrapper">
                     <img id="imagePreview" src="" alt="Upload Preview">
@@ -466,7 +472,7 @@
         let chatHistory = JSON.parse(localStorage.getItem("troop_history")) || {};
         let selectedBase64Image = null;
 
-        // Auto-expand textarea & Enter-to-send listener
+        // Auto-expand input & Enter-to-send listener
         promptInput.addEventListener("input", function() {
             this.style.height = "auto";
             this.style.height = (this.scrollHeight) + "px";
@@ -563,14 +569,19 @@
             }
 
             if (text) {
-                const textSpan = document.createElement("span");
-                textSpan.innerText = text;
-                msgDiv.appendChild(textSpan);
+                const contentDiv = document.createElement("div");
+                // Parse markdown into HTML for AI, keep plain text for User
+                if (sender === 'ai') {
+                    contentDiv.innerHTML = marked.parse(text);
+                } else {
+                    contentDiv.innerText = text;
+                }
+                msgDiv.appendChild(contentDiv);
             }
 
             wrapper.appendChild(msgDiv);
 
-            // Add Copy Button for AI responses
+            // Copy Button for AI responses
             if (sender === 'ai') {
                 const actionsDiv = document.createElement("div");
                 actionsDiv.classList.add("message-actions");
@@ -610,7 +621,7 @@
             chatList.scrollTop = chatList.scrollHeight;
         }
 
-        /* History Functions */
+        /* History Management */
         function saveToHistory(sender, text, image = null) {
             if (!chatHistory[currentSessionId]) {
                 chatHistory[currentSessionId] = {
