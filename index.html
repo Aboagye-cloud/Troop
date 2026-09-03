@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Troop AI</title>
-    <!-- Google Fonts -->
+    <!-- Google Fonts & FontAwesome Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg-color: #0f172a;
             --sidebar-bg: #111827;
             --chat-bg: #1e293b;
-            --user-msg: #0d9488; /* Teal Primary */
+            --user-msg: #0d9488; /* Primary Teal */
             --ai-msg: #334155;
             --text-color: #f8fafc;
             --text-secondary: #94a3b8;
@@ -19,6 +20,7 @@
             --border-color: #334155;
             --teal-accent: #14b8a6; /* Bright Teal */
             --teal-hover: #0d9488;
+            --danger-color: #ef4444;
         }
 
         * {
@@ -26,6 +28,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            user-select: text; /* Ensures full text copy capability */
         }
 
         body {
@@ -41,7 +44,7 @@
         .app-container {
             width: 100%;
             max-width: 1100px;
-            height: 85vh;
+            height: 90vh;
             background: var(--chat-bg);
             border-radius: 16px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
@@ -52,19 +55,20 @@
 
         /* Sidebar for Chat History */
         .sidebar {
-            width: 260px;
+            width: 280px;
             background-color: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             padding: 16px;
+            user-select: none;
         }
 
         .new-chat-btn {
             background-color: transparent;
             border: 1px solid var(--teal-accent);
             color: var(--teal-accent);
-            padding: 10px 14px;
+            padding: 12px 14px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
@@ -73,7 +77,7 @@
             justify-content: center;
             gap: 8px;
             transition: all 0.2s ease;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .new-chat-btn:hover {
@@ -81,13 +85,32 @@
             color: #0f172a;
         }
 
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
         .history-title {
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             color: var(--text-secondary);
-            margin-bottom: 10px;
             font-weight: 600;
+        }
+
+        .clear-all-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .clear-all-btn:hover {
+            color: var(--danger-color);
         }
 
         .history-list {
@@ -95,24 +118,48 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .history-item {
             padding: 10px 12px;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 0.88rem;
             color: var(--text-secondary);
             cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .history-item span {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            transition: background 0.2s ease, color 0.2s ease;
+            max-width: 180px;
         }
 
         .history-item:hover, .history-item.active {
             background-color: var(--ai-msg);
             color: var(--text-color);
+        }
+
+        .delete-single-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s ease;
+        }
+
+        .history-item:hover .delete-single-btn {
+            opacity: 1;
+        }
+
+        .delete-single-btn:hover {
+            color: var(--danger-color);
         }
 
         /* Main Chat Area */
@@ -132,11 +179,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-        }
-
-        .brand-title {
-            display: flex;
-            flex-direction: column;
+            user-select: none;
         }
 
         .brand-title h1 {
@@ -169,35 +212,65 @@
             scroll-behavior: smooth;
         }
 
-        .message {
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
             max-width: 80%;
+        }
+
+        .message-wrapper.user { align-self: flex-end; }
+        .message-wrapper.ai { align-self: flex-start; }
+
+        .message {
             padding: 12px 18px;
             border-radius: 14px;
             line-height: 1.6;
             font-size: 0.95rem;
             word-wrap: break-word;
             white-space: pre-wrap;
+            position: relative;
             animation: fadeIn 0.2s ease-in-out;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
+        .message img {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 8px;
+            margin-bottom: 8px;
         }
 
         .message.user {
-            align-self: flex-end;
             background-color: var(--user-msg);
             color: #ffffff;
             border-bottom-right-radius: 2px;
         }
 
         .message.ai {
-            align-self: flex-start;
             background-color: var(--ai-msg);
             color: var(--text-color);
             border-bottom-left-radius: 2px;
         }
+
+        .message-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+            user-select: none;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s ease;
+        }
+
+        .copy-btn:hover { color: var(--teal-accent); }
 
         /* Typing Dots Animation */
         .typing-indicator {
@@ -227,6 +300,42 @@
             40% { transform: scale(1); }
         }
 
+        /* Image Preview Box */
+        .image-preview-container {
+            display: none;
+            padding: 8px 20px 0;
+            background: rgba(15, 23, 42, 0.6);
+            align-items: center;
+            gap: 10px;
+        }
+
+        .image-preview-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .image-preview-wrapper img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .remove-img-btn {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
         /* Input Area */
         .input-area {
             padding: 16px 20px;
@@ -234,9 +343,24 @@
             backdrop-filter: blur(10px);
             border-top: 1px solid var(--border-color);
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
         }
+
+        .file-upload-label {
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            transition: color 0.2s ease, background 0.2s ease;
+        }
+
+        .file-upload-label:hover {
+            color: var(--teal-accent);
+            background: var(--input-bg);
+        }
+
+        input[type="file"] { display: none; }
 
         textarea {
             flex: 1;
@@ -247,18 +371,16 @@
             color: var(--text-color);
             font-size: 0.95rem;
             resize: none;
-            height: 48px;
+            max-height: 120px;
             outline: none;
             transition: border-color 0.2s ease;
         }
 
-        textarea:focus {
-            border-color: var(--teal-accent);
-        }
+        textarea:focus { border-color: var(--teal-accent); }
 
         button.send-btn {
             padding: 0 20px;
-            height: 48px;
+            height: 44px;
             background-color: var(--teal-accent);
             color: #0f172a;
             border: none;
@@ -273,7 +395,7 @@
         button.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         @media (max-width: 768px) {
-            .sidebar { display: none; } /* Mobile optimization */
+            .sidebar { display: none; }
         }
     </style>
 </head>
@@ -282,14 +404,17 @@
     <div class="app-container">
         <!-- History Sidebar -->
         <div class="sidebar">
-            <button class="new-chat-btn" onclick="startNewChat()">+ New Chat</button>
-            <div class="history-title">Recent Chats</div>
-            <div class="history-list" id="historyList">
-                <!-- Chat history items will render here dynamically -->
+            <button class="new-chat-btn" onclick="startNewChat()">
+                <i class="fa-solid fa-plus"></i> New Chat
+            </button>
+            <div class="history-header">
+                <span class="history-title">Recent Chats</span>
+                <button class="clear-all-btn" onclick="clearAllHistory()">Clear All</button>
             </div>
+            <div class="history-list" id="historyList"></div>
         </div>
 
-        <!-- Main Chat UI -->
+        <!-- Main Chat Area -->
         <div class="chat-main">
             <!-- Header -->
             <div class="chat-header">
@@ -302,12 +427,26 @@
 
             <!-- Messages List -->
             <div class="messages-list" id="chatList">
-                <div class="message ai">Hello! I'm Troop AI. How can I help you today?</div>
+                <div class="message-wrapper ai">
+                    <div class="message ai">Hello! I'm Troop AI. How can I help you today?</div>
+                </div>
+            </div>
+
+            <!-- Image Preview Area -->
+            <div class="image-preview-container" id="imagePreviewContainer">
+                <div class="image-preview-wrapper">
+                    <img id="imagePreview" src="" alt="Upload Preview">
+                    <button class="remove-img-btn" onclick="removeImage()">×</button>
+                </div>
             </div>
 
             <!-- Input Area -->
             <div class="input-area">
-                <textarea id="promptInput" placeholder="Type a message... (Press Enter to send)" rows="1"></textarea>
+                <label for="imageInput" class="file-upload-label" title="Attach an image">
+                    <i class="fa-solid fa-paperclip"></i>
+                </label>
+                <input type="file" id="imageInput" accept="image/*" onchange="handleImageSelect(event)">
+                <textarea id="promptInput" placeholder="Type a message or upload an image..." rows="1"></textarea>
                 <button class="send-btn" id="submitBtn" onclick="sendPrompt()">Send</button>
             </div>
         </div>
@@ -319,11 +458,20 @@
         const chatList = document.getElementById("chatList");
         const submitBtn = document.getElementById("submitBtn");
         const historyList = document.getElementById("historyList");
+        const imageInput = document.getElementById("imageInput");
+        const imagePreviewContainer = document.getElementById("imagePreviewContainer");
+        const imagePreview = document.getElementById("imagePreview");
 
         let currentSessionId = Date.now();
         let chatHistory = JSON.parse(localStorage.getItem("troop_history")) || {};
+        let selectedBase64Image = null;
 
-        // Keyboard handler
+        // Auto-expand textarea & Enter-to-send listener
+        promptInput.addEventListener("input", function() {
+            this.style.height = "auto";
+            this.style.height = (this.scrollHeight) + "px";
+        });
+
         promptInput.addEventListener("keydown", function(e) {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -331,27 +479,53 @@
             }
         });
 
-        // Initialize UI
         renderHistoryList();
+
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedBase64Image = e.target.result;
+                imagePreview.src = selectedBase64Image;
+                imagePreviewContainer.style.display = "flex";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            selectedBase64Image = null;
+            imageInput.value = "";
+            imagePreviewContainer.style.display = "none";
+        }
 
         async function sendPrompt() {
             const prompt = promptInput.value.trim();
-            if (!prompt) return;
+            if (!prompt && !selectedBase64Image) return;
 
-            // 1. Append User Message
-            appendMessage(prompt, 'user');
-            saveToHistory('user', prompt);
+            const userImageData = selectedBase64Image;
+            appendMessage(prompt, 'user', userImageData);
+            saveToHistory('user', prompt, userImageData);
+
             promptInput.value = "";
+            promptInput.style.height = "auto";
+            removeImage();
 
-            // 2. Show typing indicator
             const typingIndicator = showTypingIndicator();
             submitBtn.disabled = true;
+
+            const currentHistory = chatHistory[currentSessionId]?.messages || [];
 
             try {
                 const response = await fetch(`${API_URL}/api/generate`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt: prompt })
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        image: userImageData,
+                        history: currentHistory
+                    })
                 });
 
                 const data = await response.json();
@@ -361,7 +535,7 @@
                     appendMessage(data.result, 'ai');
                     saveToHistory('ai', data.result);
                 } else {
-                    const errText = "Error: " + (data.error || "Failed to parse response.");
+                    const errText = "Error: " + (data.error || "Failed to generate response.");
                     appendMessage(errText, 'ai');
                     saveToHistory('ai', errText);
                 }
@@ -375,12 +549,52 @@
             }
         }
 
-        function appendMessage(text, sender) {
+        function appendMessage(text, sender, imageSrc = null) {
+            const wrapper = document.createElement("div");
+            wrapper.classList.add("message-wrapper", sender);
+
             const msgDiv = document.createElement("div");
             msgDiv.classList.add("message", sender);
-            msgDiv.innerText = text;
-            chatList.appendChild(msgDiv);
+
+            if (imageSrc) {
+                const img = document.createElement("img");
+                img.src = imageSrc;
+                msgDiv.appendChild(img);
+            }
+
+            if (text) {
+                const textSpan = document.createElement("span");
+                textSpan.innerText = text;
+                msgDiv.appendChild(textSpan);
+            }
+
+            wrapper.appendChild(msgDiv);
+
+            // Add Copy Button for AI responses
+            if (sender === 'ai') {
+                const actionsDiv = document.createElement("div");
+                actionsDiv.classList.add("message-actions");
+                actionsDiv.innerHTML = `
+                    <button class="copy-btn" onclick="copyText(this)">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                `;
+                wrapper.appendChild(actionsDiv);
+            }
+
+            chatList.appendChild(wrapper);
             scrollToBottom();
+        }
+
+        function copyText(btn) {
+            const wrapper = btn.closest(".message-wrapper");
+            const textToCopy = wrapper.querySelector(".message").innerText;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
+                setTimeout(() => {
+                    btn.innerHTML = `<i class="fa-regular fa-copy"></i> Copy`;
+                }, 2000);
+            });
         }
 
         function showTypingIndicator() {
@@ -396,15 +610,15 @@
             chatList.scrollTop = chatList.scrollHeight;
         }
 
-        /* --- History Management --- */
-        function saveToHistory(sender, text) {
+        /* History Functions */
+        function saveToHistory(sender, text, image = null) {
             if (!chatHistory[currentSessionId]) {
                 chatHistory[currentSessionId] = {
-                    title: text.substring(0, 24) + "...",
+                    title: text ? text.substring(0, 24) + "..." : "Image Query",
                     messages: []
                 };
             }
-            chatHistory[currentSessionId].messages.push({ sender, text });
+            chatHistory[currentSessionId].messages.push({ sender, text, image });
             localStorage.setItem("troop_history", JSON.stringify(chatHistory));
             renderHistoryList();
         }
@@ -417,8 +631,13 @@
                 const item = document.createElement("div");
                 item.classList.add("history-item");
                 if (parseInt(id) === currentSessionId) item.classList.add("active");
-                item.innerText = chatHistory[id].title || "New Chat";
-                item.onclick = () => loadChatSession(id);
+
+                item.innerHTML = `
+                    <span onclick="loadChatSession(${id})">${chatHistory[id].title || "Chat"}</span>
+                    <button class="delete-single-btn" onclick="deleteSession(event, ${id})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
                 historyList.appendChild(item);
             });
         }
@@ -428,15 +647,35 @@
             chatList.innerHTML = "";
             const session = chatHistory[id];
             if (session && session.messages) {
-                session.messages.forEach(msg => appendMessage(msg.text, msg.sender));
+                session.messages.forEach(msg => appendMessage(msg.text, msg.sender, msg.image));
             }
             renderHistoryList();
         }
 
         function startNewChat() {
             currentSessionId = Date.now();
-            chatList.innerHTML = `<div class="message ai">Hello! I'm Troop AI. How can I help you today?</div>`;
+            chatList.innerHTML = `
+                <div class="message-wrapper ai">
+                    <div class="message ai">Hello! I'm Troop AI. How can I help you today?</div>
+                </div>
+            `;
             renderHistoryList();
+        }
+
+        function deleteSession(event, id) {
+            event.stopPropagation();
+            delete chatHistory[id];
+            localStorage.setItem("troop_history", JSON.stringify(chatHistory));
+            if (currentSessionId === id) startNewChat();
+            else renderHistoryList();
+        }
+
+        function clearAllHistory() {
+            if (confirm("Delete all chat history?")) {
+                chatHistory = {};
+                localStorage.removeItem("troop_history");
+                startNewChat();
+            }
         }
     </script>
 </body>
