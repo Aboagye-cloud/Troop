@@ -21,7 +21,7 @@ app.post("/api/generate", async (req, res) => {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // 1. Build contents array including conversation history if sent from frontend
+    // Build contents array including conversation history if sent from frontend
     const contents = [];
     if (history && Array.isArray(history)) {
       history.forEach((msg) => {
@@ -31,6 +31,7 @@ app.post("/api/generate", async (req, res) => {
         });
       });
     }
+
     // Append current prompt
     contents.push({
       role: "user",
@@ -39,14 +40,11 @@ app.post("/api/generate", async (req, res) => {
 
     const currentDate = new Date().toUTCString();
 
-    // 2. Call Gemini using systemInstruction and generationConfig
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash", // Recommended standard fast model
+      model: "gemini-3.6-flash",
       contents: contents,
       config: {
-        // Enforces persona and constraints
         systemInstruction: `You are Troop AI, a smart, concise, and helpful assistant created by Aboagye. Provide clear, direct, and factual answers. Current UTC time is ${currentDate}.`,
-        // Lower temperature prevents silly/unfocused hallucinated responses
         temperature: 0.3,
         topP: 0.8
       }
