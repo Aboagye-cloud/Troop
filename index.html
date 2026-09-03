@@ -4,19 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Troop AI</title>
-    <!-- Google Fonts for modern typography -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #0f172a;
+            --sidebar-bg: #111827;
             --chat-bg: #1e293b;
-            --user-msg: #2563eb;
+            --user-msg: #0d9488; /* Teal Primary */
             --ai-msg: #334155;
             --text-color: #f8fafc;
             --text-secondary: #94a3b8;
             --input-bg: #0f172a;
             --border-color: #334155;
-            --accent: #38bdf8;
+            --teal-accent: #14b8a6; /* Bright Teal */
+            --teal-hover: #0d9488;
         }
 
         * {
@@ -33,24 +35,97 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px;
         }
 
-        .chat-container {
+        .app-container {
             width: 100%;
-            max-width: 800px;
-            height: 90vh;
+            max-width: 1100px;
+            height: 85vh;
             background: var(--chat-bg);
             border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             display: flex;
-            flex-direction: column;
             overflow: hidden;
             border: 1px solid var(--border-color);
         }
 
+        /* Sidebar for Chat History */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .new-chat-btn {
+            background-color: transparent;
+            border: 1px solid var(--teal-accent);
+            color: var(--teal-accent);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            margin-bottom: 20px;
+        }
+
+        .new-chat-btn:hover {
+            background-color: var(--teal-accent);
+            color: #0f172a;
+        }
+
+        .history-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-item {
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .history-item:hover, .history-item.active {
+            background-color: var(--ai-msg);
+            color: var(--text-color);
+        }
+
+        /* Main Chat Area */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
         /* Header */
         .chat-header {
-            padding: 20px;
+            padding: 16px 24px;
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border-color);
@@ -59,25 +134,34 @@
             justify-content: space-between;
         }
 
-        .chat-header h1 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--accent);
+        .brand-title {
             display: flex;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
         }
 
-        .chat-header span.status {
+        .brand-title h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--teal-accent);
+            line-height: 1.1;
+        }
+
+        .brand-title .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        .status {
             font-size: 0.8rem;
             color: var(--text-secondary);
-            font-weight: 400;
         }
 
-        /* Message Area */
+        /* Messages */
         .messages-list {
             flex: 1;
-            padding: 20px;
+            padding: 24px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -143,7 +227,7 @@
             40% { transform: scale(1); }
         }
 
-        /* Input Footer */
+        /* Input Area */
         .input-area {
             padding: 16px 20px;
             background: rgba(15, 23, 42, 0.6);
@@ -169,44 +253,63 @@
         }
 
         textarea:focus {
-            border-color: var(--accent);
+            border-color: var(--teal-accent);
         }
 
-        button {
+        button.send-btn {
             padding: 0 20px;
             height: 48px;
-            background-color: var(--accent);
+            background-color: var(--teal-accent);
             color: #0f172a;
             border: none;
             border-radius: 10px;
             font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
-            transition: opacity 0.2s ease;
+            transition: background 0.2s ease;
         }
 
-        button:hover { opacity: 0.9; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.send-btn:hover { background-color: var(--teal-hover); }
+        button.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; } /* Mobile optimization */
+        }
     </style>
 </head>
 <body>
 
-    <div class="chat-container">
-        <!-- Header -->
-        <div class="chat-header">
-            <h1>Troop AI</h1>
-            <span class="status">Powered by Gemini</span>
+    <div class="app-container">
+        <!-- History Sidebar -->
+        <div class="sidebar">
+            <button class="new-chat-btn" onclick="startNewChat()">+ New Chat</button>
+            <div class="history-title">Recent Chats</div>
+            <div class="history-list" id="historyList">
+                <!-- Chat history items will render here dynamically -->
+            </div>
         </div>
 
-        <!-- Chat History Container -->
-        <div class="messages-list" id="chatList">
-            <div class="message ai">Hello! I'm Troop AI. How can I help you today?</div>
-        </div>
+        <!-- Main Chat UI -->
+        <div class="chat-main">
+            <!-- Header -->
+            <div class="chat-header">
+                <div class="brand-title">
+                    <h1>Troop AI</h1>
+                    <span class="subtitle">created by Aboagye</span>
+                </div>
+                <span class="status">Powered by Gemini</span>
+            </div>
 
-        <!-- Input Box -->
-        <div class="input-area">
-            <textarea id="promptInput" placeholder="Type a message... (Press Enter to send)" rows="1"></textarea>
-            <button id="submitBtn" onclick="sendPrompt()">Send</button>
+            <!-- Messages List -->
+            <div class="messages-list" id="chatList">
+                <div class="message ai">Hello! I'm Troop AI. How can I help you today?</div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <textarea id="promptInput" placeholder="Type a message... (Press Enter to send)" rows="1"></textarea>
+                <button class="send-btn" id="submitBtn" onclick="sendPrompt()">Send</button>
+            </div>
         </div>
     </div>
 
@@ -215,8 +318,12 @@
         const promptInput = document.getElementById("promptInput");
         const chatList = document.getElementById("chatList");
         const submitBtn = document.getElementById("submitBtn");
+        const historyList = document.getElementById("historyList");
 
-        // Allow pressing 'Enter' to send (Shift + Enter for a new line)
+        let currentSessionId = Date.now();
+        let chatHistory = JSON.parse(localStorage.getItem("troop_history")) || {};
+
+        // Keyboard handler
         promptInput.addEventListener("keydown", function(e) {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -224,15 +331,19 @@
             }
         });
 
+        // Initialize UI
+        renderHistoryList();
+
         async function sendPrompt() {
             const prompt = promptInput.value.trim();
             if (!prompt) return;
 
             // 1. Append User Message
             appendMessage(prompt, 'user');
+            saveToHistory('user', prompt);
             promptInput.value = "";
 
-            // 2. Add Typing Indicator
+            // 2. Show typing indicator
             const typingIndicator = showTypingIndicator();
             submitBtn.disabled = true;
 
@@ -244,18 +355,21 @@
                 });
 
                 const data = await response.json();
-                
-                // Remove typing indicator before appending response
                 typingIndicator.remove();
 
                 if (data.result) {
                     appendMessage(data.result, 'ai');
+                    saveToHistory('ai', data.result);
                 } else {
-                    appendMessage("Error: " + (data.error || "Failed to parse response."), 'ai');
+                    const errText = "Error: " + (data.error || "Failed to parse response.");
+                    appendMessage(errText, 'ai');
+                    saveToHistory('ai', errText);
                 }
             } catch (err) {
                 typingIndicator.remove();
-                appendMessage("Error connecting to the server. Please try again.", 'ai');
+                const connErr = "Error connecting to the server. Please try again.";
+                appendMessage(connErr, 'ai');
+                saveToHistory('ai', connErr);
             } finally {
                 submitBtn.disabled = false;
             }
@@ -280,6 +394,49 @@
 
         function scrollToBottom() {
             chatList.scrollTop = chatList.scrollHeight;
+        }
+
+        /* --- History Management --- */
+        function saveToHistory(sender, text) {
+            if (!chatHistory[currentSessionId]) {
+                chatHistory[currentSessionId] = {
+                    title: text.substring(0, 24) + "...",
+                    messages: []
+                };
+            }
+            chatHistory[currentSessionId].messages.push({ sender, text });
+            localStorage.setItem("troop_history", JSON.stringify(chatHistory));
+            renderHistoryList();
+        }
+
+        function renderHistoryList() {
+            historyList.innerHTML = "";
+            const keys = Object.keys(chatHistory).reverse();
+
+            keys.forEach(id => {
+                const item = document.createElement("div");
+                item.classList.add("history-item");
+                if (parseInt(id) === currentSessionId) item.classList.add("active");
+                item.innerText = chatHistory[id].title || "New Chat";
+                item.onclick = () => loadChatSession(id);
+                historyList.appendChild(item);
+            });
+        }
+
+        function loadChatSession(id) {
+            currentSessionId = parseInt(id);
+            chatList.innerHTML = "";
+            const session = chatHistory[id];
+            if (session && session.messages) {
+                session.messages.forEach(msg => appendMessage(msg.text, msg.sender));
+            }
+            renderHistoryList();
+        }
+
+        function startNewChat() {
+            currentSessionId = Date.now();
+            chatList.innerHTML = `<div class="message ai">Hello! I'm Troop AI. How can I help you today?</div>`;
+            renderHistoryList();
         }
     </script>
 </body>
