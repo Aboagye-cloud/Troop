@@ -563,7 +563,7 @@
                 <label for="imageInput" class="file-upload-label" title="Attach an image">
                     <i class="fa-solid fa-paperclip"></i>
                 </label>
-                <input type="file" id="imageInput" accept="image/*" onchange="handleImageSelect(event)">
+                <input type="file" id="imageInput" accept="image/*">
                 <textarea id="promptInput" placeholder="Type a message..." rows="1"></textarea>
                 <button class="send-btn" id="submitBtn" onclick="sendPrompt()">Send</button>
             </div>
@@ -585,6 +585,8 @@
         let currentSessionId = Date.now();
         let chatHistory = JSON.parse(localStorage.getItem("troop_history")) || {};
         let selectedBase64Image = null;
+
+        imageInput.addEventListener("change", handleImageSelect);
 
         function toggleSidebar(open) {
             if (open) {
