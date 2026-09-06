@@ -4,27 +4,28 @@ const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" })); // Increased payload limit to support base64 image uploads
 
 app.post("/api/generate", async (req, res) => {
-  const { prompt, history } = req.body;
+  const { prompt, image, history } = req.body;
 
-  if (!prompt) {
-    return res.status(400).json({ error: "Prompt is required." });
+  if (!prompt && !image) {
+    return res.status(400).json({ error: "Prompt or image is required." });
   }
 
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing on Vercel." });
+      return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing." });
     }
 
     const ai = new GoogleGenAI({ apiKey });
 
-    // Build contents array including conversation history if sent from frontend
+    // Build contents array including conversation history
     const contents = [];
     if (history && Array.isArray(history)) {
       history.forEach((msg) => {
+        if (!msg.text) return;
         contents.push({
           role: msg.sender === "user" ? "user" : "model",
           parts: [{ text: msg.text }]
@@ -32,28 +33,86 @@ app.post("/api/generate", async (req, res) => {
       });
     }
 
-    // Append current prompt
+    // Build current user message parts
+    const currentParts = [];
+
+    // Add inline image if sent in base64 format
+    if (image) {
+      const match = image.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (match) {
+        currentParts.push({
+          inlineData: {
+            mimeType: match[1],
+            data: match[2]
+          }
+        });
+      }
+    }
+
+    // Add prompt text
+    if (prompt) {
+      currentParts.push({ text: prompt });
+    }
+
     contents.push({
       role: "user",
-      parts: [{ text: prompt }]
+      parts: currentParts
     });
 
     const currentDate = new Date().toUTCString();
+    const systemInstruction = `You are Troop AI, a smart, concise, and helpful assistant created by Aboagye. Provide clear, direct, and factual answers. Current UTC time is ${currentDate}.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: contents,
-      config: {
-        systemInstruction: `You are Troop AI, a smart, concise, and helpful assistant created by Aboagye. Provide clear, direct, and factual answers. Current UTC time is ${currentDate}.`,
-        temperature: 0.3,
-        topP: 0.8
+    // Fallback model cascade
+    const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    let resultText = null;
+    let lastError = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: contents,
+          config: {
+            systemInstruction: systemInstruction,
+            temperature: 0.3,
+            topP: 0.8
+          }
+        });
+
+        if (response && response.text) {
+          resultText = response.text;
+          break; // Exit loop on successful generation
+        }
+      } catch (err) {
+        console.warn(`Model ${modelName} failed or rate limited:`, err.message || err);
+        lastError = err;
       }
+    }
+
+    if (resultText) {
+      return res.json({ result: resultText });
+    }
+
+    // Handle error responses cleanly if all models failed
+    const isRateLimit = lastError && (
+      lastError.status === 429 || 
+      JSON.stringify(lastError).includes("429") || 
+      JSON.stringify(lastError).includes("RESOURCE_EXHAUSTED")
+    );
+
+    if (isRateLimit) {
+      return res.status(429).json({
+        error: "Rate limit exceeded across available models. Please wait a minute and try again."
+      });
+    }
+
+    return res.status(500).json({
+      error: "An error occurred while generating a response. Please try again."
     });
 
-    res.json({ result: response.text });
   } catch (error) {
-    console.error("Gemini Error:", error);
-    res.status(500).json({ error: error.message || String(error) });
+    console.error("Gemini Backend Error:", error);
+    res.status(500).json({ error: "Internal server error." });
   }
 });
 
