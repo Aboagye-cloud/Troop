@@ -13,13 +13,13 @@
             --bg-color: #0f172a;
             --sidebar-bg: #111827;
             --chat-bg: #1e293b;
-            --user-msg: #0d9488; /* Primary Teal */
+            --user-msg: #0d9488;
             --ai-msg: #334155;
             --text-color: #f8fafc;
             --text-secondary: #94a3b8;
             --input-bg: #0f172a;
             --border-color: #334155;
-            --teal-accent: #14b8a6; /* Bright Teal */
+            --teal-accent: #14b8a6;
             --teal-hover: #0d9488;
             --danger-color: #ef4444;
         }
@@ -60,7 +60,6 @@
             border: 1px solid var(--border-color);
         }
 
-        /* Backdrop Overlay for Mobile Drawer */
         .sidebar-overlay {
             display: none;
             position: absolute;
@@ -80,7 +79,6 @@
             opacity: 1;
         }
 
-        /* Sidebar for Chat History */
         .sidebar {
             width: 280px;
             background-color: var(--sidebar-bg);
@@ -208,7 +206,6 @@
             color: var(--danger-color);
         }
 
-        /* Main Chat Area */
         .chat-main {
             flex: 1;
             display: flex;
@@ -219,7 +216,6 @@
             overflow: hidden;
         }
 
-        /* Header */
         .chat-header {
             padding: 12px 16px;
             background: rgba(15, 23, 42, 0.8);
@@ -262,12 +258,6 @@
             font-weight: 500;
         }
 
-        .status {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-
-        /* Messages List */
         .messages-list {
             flex: 1;
             padding: 16px;
@@ -296,7 +286,6 @@
             word-break: break-word;
             overflow-wrap: anywhere;
             position: relative;
-            animation: fadeIn 0.2s ease-in-out;
         }
 
         .message p { margin-bottom: 8px; }
@@ -346,7 +335,6 @@
 
         .copy-btn:hover { color: var(--teal-accent); }
 
-        /* Typing Dots Animation */
         .typing-indicator {
             display: flex;
             align-items: center;
@@ -374,7 +362,6 @@
             40% { transform: scale(1); }
         }
 
-        /* Image Preview Box */
         .image-preview-container {
             display: none;
             padding: 8px 16px 0;
@@ -411,7 +398,6 @@
             cursor: pointer;
         }
 
-        /* Input Area - Fixed for Mobile */
         .input-area {
             padding: 12px 16px;
             background: rgba(15, 23, 42, 0.95);
@@ -474,7 +460,6 @@
         button.send-btn:hover { background-color: var(--teal-hover); }
         button.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Mobile and Tablet Specific Rules */
         @media (max-width: 1024px) {
             body {
                 padding: 0;
@@ -543,7 +528,7 @@
 
         <!-- Main Chat Area -->
         <div class="chat-main">
-            <!-- Header -->
+            <!-- Header Fixed -->
             <div class="chat-header">
                 <div class="header-left">
                     <button class="menu-toggle-btn" onclick="toggleSidebar(true)" title="Open History">
@@ -553,12 +538,15 @@
                         <h1>Troop AI</h1>
                         <span class="subtitle">created by Aboagye</span>
                     </div>
-               
+                </div>
+            </div>
 
             <!-- Messages List -->
             <div class="messages-list" id="chatList">
                 <div class="message-wrapper ai">
-                    <div class="message ai">Hello! I'm Troop AI. How can I help you today?</div>
+                    <div class="message ai">
+                        <div class="msg-content">Hello! I'm Troop AI. How can I help you today?</div>
+                    </div>
                 </div>
             </div>
 
@@ -598,7 +586,6 @@
         let chatHistory = JSON.parse(localStorage.getItem("troop_history")) || {};
         let selectedBase64Image = null;
 
-        // Mobile Sidebar Slide Drawer Toggle
         function toggleSidebar(open) {
             if (open) {
                 sidebar.classList.add("open");
@@ -609,7 +596,6 @@
             }
         }
 
-        // Auto-expand textarea & Enter-to-send listener
         promptInput.addEventListener("input", function() {
             this.style.height = "auto";
             this.style.height = (this.scrollHeight) + "px";
@@ -707,6 +693,7 @@
 
             if (text) {
                 const contentDiv = document.createElement("div");
+                contentDiv.classList.add("msg-content");
                 if (sender === 'ai') {
                     contentDiv.innerHTML = marked.parse(text);
                 } else {
@@ -717,7 +704,6 @@
 
             wrapper.appendChild(msgDiv);
 
-            // Copy Button for AI responses
             if (sender === 'ai') {
                 const actionsDiv = document.createElement("div");
                 actionsDiv.classList.add("message-actions");
@@ -735,7 +721,7 @@
 
         function copyText(btn) {
             const wrapper = btn.closest(".message-wrapper");
-            const textToCopy = wrapper.querySelector(".message").innerText;
+            const textToCopy = wrapper.querySelector(".msg-content").innerText;
             navigator.clipboard.writeText(textToCopy).then(() => {
                 btn.innerHTML = `<i class="fa-solid fa-check"></i> Copied!`;
                 setTimeout(() => {
@@ -757,11 +743,11 @@
             chatList.scrollTop = chatList.scrollHeight;
         }
 
-        /* History Functions */
         function saveToHistory(sender, text, image = null) {
             if (!chatHistory[currentSessionId]) {
+                const fallbackTitle = text ? text.substring(0, 24) + "..." : "Image Query";
                 chatHistory[currentSessionId] = {
-                    title: text ? text.substring(0, 24) + "..." : "Image Query",
+                    title: fallbackTitle,
                     messages: []
                 };
             }
@@ -804,7 +790,9 @@
             currentSessionId = Date.now();
             chatList.innerHTML = `
                 <div class="message-wrapper ai">
-                    <div class="message ai">Hello! I'm Troop AI. How can I help you today?</div>
+                    <div class="message ai">
+                        <div class="msg-content">Hello! I'm Troop AI. How can I help you today?</div>
+                    </div>
                 </div>
             `;
             renderHistoryList();
