@@ -61,8 +61,8 @@ module.exports = async (req, res) => {
       currentParts.push({ text: prompt });
     }
 
-    // 4. Stable, active model endpoints
-    const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash"];
+    // 4. Fully valid model names supported by @google/generative-ai SDK
+    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
     let resultText = null;
     let lastError = null;
 
@@ -101,7 +101,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ result: resultText });
     }
 
-    // 5. Diagnostics: Return actual underlying error if model calls fail
+    // 5. Diagnostics error output
     return res.status(500).json({
       error: lastError?.message || "An error occurred while generating a response."
     });
