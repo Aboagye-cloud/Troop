@@ -61,8 +61,8 @@ module.exports = async (req, res) => {
       currentParts.push({ text: prompt });
     }
 
-    // 4. Fully valid model names supported by @google/generative-ai SDK
-    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+    // 4. Use supported active model endpoints
+    const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
     let resultText = null;
     let lastError = null;
 
