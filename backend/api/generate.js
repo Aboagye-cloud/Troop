@@ -1,15 +1,17 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 module.exports = async (req, res) => {
-  // 1. CORS headers
+  // 1. Set explicit CORS headers for cross-origin frontend calls
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
+  // 2. Handle CORS preflight OPTIONS request
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
+  // 3. Ensure route accepts POST requests
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
@@ -31,7 +33,7 @@ module.exports = async (req, res) => {
     const currentDate = new Date().toUTCString();
     const systemInstruction = `You are Troop AI, a smart, concise, and helpful assistant created by Aboagye. Provide clear, direct, and factual answers. Current UTC time is ${currentDate}.`;
 
-    // 2. Format history into SDK-compliant format
+    // 4. Format history into SDK-compliant structure
     const formattedHistory = [];
     if (history && Array.isArray(history)) {
       history.forEach((msg) => {
@@ -43,7 +45,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    // 3. Construct user input parts
+    // 5. Construct current user input parts
     const currentParts = [];
     if (image) {
       const match = image.match(/^data:(image\/\w+);base64,(.+)$/);
@@ -61,8 +63,8 @@ module.exports = async (req, res) => {
       currentParts.push({ text: prompt });
     }
 
-    // 4. Use supported active model endpoints
-    const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+    // 6. Active production models
+    const modelsToTry = ["gemini-3.5-flash-lite", "gemini-flash-latest"];
     let resultText = null;
     let lastError = null;
 
@@ -101,7 +103,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ result: resultText });
     }
 
-    // 5. Diagnostics error output
+    // 7. Surface underlying error for debugging
     return res.status(500).json({
       error: lastError?.message || "An error occurred while generating a response."
     });
