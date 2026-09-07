@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 module.exports = async (req, res) => {
-  // 1. Set explicit CORS headers for cross-origin frontend calls
+  // 1. Set explicit CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
     const currentDate = new Date().toUTCString();
     const systemInstruction = `You are Troop AI, a smart, concise, and helpful assistant created by Aboagye. Provide clear, direct, and factual answers. Current UTC time is ${currentDate}.`;
 
-    // Format historical messages for @google/generative-ai SDK
+    // Format chat history
     const formattedHistory = [];
     if (history && Array.isArray(history)) {
       history.forEach((msg) => {
@@ -45,7 +45,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Build current user request content
+    // Build current turn content parts
     const currentParts = [];
     if (image) {
       const match = image.match(/^data:(image\/\w+);base64,(.+)$/);
@@ -63,8 +63,8 @@ module.exports = async (req, res) => {
       currentParts.push({ text: prompt });
     }
 
-    // Fallback model cascade
-    const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    // Active, supported models in the cascade chain
+    const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash"];
     let resultText = null;
     let lastError = null;
 
@@ -81,20 +81,22 @@ module.exports = async (req, res) => {
 
         let response;
         if (formattedHistory.length > 0) {
+          // Send chat message with full content array (supports images + text)
           const chat = model.startChat({ history: formattedHistory });
           const result = await chat.sendMessage(currentParts);
           response = await result.response;
         } else {
+          // Direct single-turn content generation
           const result = await model.generateContent(currentParts);
           response = await result.response;
         }
 
         if (response && response.text) {
           resultText = response.text();
-          break; // Exit loop on success
+          break; // Exit loop when successful
         }
       } catch (err) {
-        console.warn(`Model ${modelName} failed or rate limited:`, err.message || err);
+        console.warn(`Model ${modelName} failed:`, err.message || err);
         lastError = err;
       }
     }
@@ -103,7 +105,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ result: resultText });
     }
 
-    // Handle error responses cleanly
+    // Rate limiting check
     const isRateLimit = lastError && (
       lastError.status === 429 || 
       JSON.stringify(lastError).includes("429") || 
