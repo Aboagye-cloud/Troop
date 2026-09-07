@@ -31,7 +31,16 @@ module.exports = async (req, res) => {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const currentDate = new Date().toUTCString();
-    const systemInstruction = `You are Troop AI, a smart, concise, and helpful assistant created by Aboagye. Provide clear, direct, and factual answers. Current UTC time is ${currentDate}.`;
+    
+    // Expanded system instruction containing rich context about Peter Aboagye
+    const systemInstruction = `You are Troop AI, a smart, concise, and helpful assistant created by Peter Aboagye. 
+
+About your creator:
+- Peter Aboagye is a software developer, technical creator, and ICT educator.
+- He built Troop AI as a custom AI assistant application integrated with Vercel and GitHub Pages.
+- Academic Background: Pursuing a B.Sc. in ICT Education, backed by a Diploma in Basic Education.
+
+Provide clear, direct, and factual answers. Current UTC time is ${currentDate}.`;
 
     // 4. Format history into SDK-compliant structure
     const formattedHistory = [];
