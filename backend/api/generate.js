@@ -1,13 +1,22 @@
-const express = require("express");
-const cors = require("cors");
 const { GoogleGenAI } = require("@google/genai");
 
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: "10mb" })); // Increased payload limit to support base64 image uploads
+module.exports = async (req, res) => {
+  // 1. Set explicit CORS headers for cross-origin frontend calls (e.g. GitHub Pages)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-app.post("/api/generate", async (req, res) => {
-  const { prompt, image, history } = req.body;
+  // 2. Handle CORS preflight OPTIONS request
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  // 3. Ensure route accepts POST requests
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  const { prompt, image, history } = req.body || {};
 
   if (!prompt && !image) {
     return res.status(400).json({ error: "Prompt or image is required." });
@@ -90,7 +99,7 @@ app.post("/api/generate", async (req, res) => {
     }
 
     if (resultText) {
-      return res.json({ result: resultText });
+      return res.status(200).json({ result: resultText });
     }
 
     // Handle error responses cleanly if all models failed
@@ -112,8 +121,6 @@ app.post("/api/generate", async (req, res) => {
 
   } catch (error) {
     console.error("Gemini Backend Error:", error);
-    res.status(500).json({ error: "Internal server error." });
+    return res.status(500).json({ error: "Internal server error." });
   }
-});
-
-module.exports = app;
+};
