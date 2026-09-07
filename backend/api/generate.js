@@ -1,7 +1,7 @@
-const { GoogleGenAI } = require("@google/genai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 module.exports = async (req, res) => {
-  // 1. Set explicit CORS headers for cross-origin frontend calls (e.g. GitHub Pages)
+  // 1. Set explicit CORS headers for cross-origin frontend calls
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -28,24 +28,25 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing." });
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Build contents array including conversation history
-    const contents = [];
+    const currentDate = new Date().toUTCString();
+    const systemInstruction = `You are Troop AI, a smart, concise, and helpful assistant created by Aboagye. Provide clear, direct, and factual answers. Current UTC time is ${currentDate}.`;
+
+    // Format historical messages for @google/generative-ai SDK
+    const formattedHistory = [];
     if (history && Array.isArray(history)) {
       history.forEach((msg) => {
         if (!msg.text) return;
-        contents.push({
+        formattedHistory.push({
           role: msg.sender === "user" ? "user" : "model",
           parts: [{ text: msg.text }]
         });
       });
     }
 
-    // Build current user message parts
+    // Build current user request content
     const currentParts = [];
-
-    // Add inline image if sent in base64 format
     if (image) {
       const match = image.match(/^data:(image\/\w+);base64,(.+)$/);
       if (match) {
@@ -58,18 +59,9 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Add prompt text
     if (prompt) {
       currentParts.push({ text: prompt });
     }
-
-    contents.push({
-      role: "user",
-      parts: currentParts
-    });
-
-    const currentDate = new Date().toUTCString();
-    const systemInstruction = `You are Troop AI, a smart, concise, and helpful assistant created by Aboagye. Provide clear, direct, and factual answers. Current UTC time is ${currentDate}.`;
 
     // Fallback model cascade
     const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash"];
@@ -78,19 +70,28 @@ module.exports = async (req, res) => {
 
     for (const modelName of modelsToTry) {
       try {
-        const response = await ai.models.generateContent({
+        const model = genAI.getGenerativeModel({
           model: modelName,
-          contents: contents,
-          config: {
-            systemInstruction: systemInstruction,
+          systemInstruction: systemInstruction,
+          generationConfig: {
             temperature: 0.3,
             topP: 0.8
           }
         });
 
+        let response;
+        if (formattedHistory.length > 0) {
+          const chat = model.startChat({ history: formattedHistory });
+          const result = await chat.sendMessage(currentParts);
+          response = await result.response;
+        } else {
+          const result = await model.generateContent(currentParts);
+          response = await result.response;
+        }
+
         if (response && response.text) {
-          resultText = response.text;
-          break; // Exit loop on successful generation
+          resultText = response.text();
+          break; // Exit loop on success
         }
       } catch (err) {
         console.warn(`Model ${modelName} failed or rate limited:`, err.message || err);
@@ -102,7 +103,7 @@ module.exports = async (req, res) => {
       return res.status(200).json({ result: resultText });
     }
 
-    // Handle error responses cleanly if all models failed
+    // Handle error responses cleanly
     const isRateLimit = lastError && (
       lastError.status === 429 || 
       JSON.stringify(lastError).includes("429") || 
