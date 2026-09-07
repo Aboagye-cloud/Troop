@@ -1,17 +1,15 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 module.exports = async (req, res) => {
-  // 1. Set explicit CORS headers
+  // 1. CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // 2. Handle CORS preflight OPTIONS request
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
-  // 3. Ensure route accepts POST requests
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
@@ -25,7 +23,7 @@ module.exports = async (req, res) => {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing." });
+      return res.status(500).json({ error: "GEMINI_API_KEY environment variable is missing on Vercel." });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -33,7 +31,7 @@ module.exports = async (req, res) => {
     const currentDate = new Date().toUTCString();
     const systemInstruction = `You are Troop AI, a smart, concise, and helpful assistant created by Aboagye. Provide clear, direct, and factual answers. Current UTC time is ${currentDate}.`;
 
-    // Format chat history
+    // 2. Format history into SDK-compliant format
     const formattedHistory = [];
     if (history && Array.isArray(history)) {
       history.forEach((msg) => {
@@ -45,7 +43,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Build current turn content parts
+    // 3. Construct user input parts
     const currentParts = [];
     if (image) {
       const match = image.match(/^data:(image\/\w+);base64,(.+)$/);
@@ -63,7 +61,7 @@ module.exports = async (req, res) => {
       currentParts.push({ text: prompt });
     }
 
-    // Active, supported models in the cascade chain
+    // 4. Stable, active model endpoints
     const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash"];
     let resultText = null;
     let lastError = null;
@@ -81,22 +79,20 @@ module.exports = async (req, res) => {
 
         let response;
         if (formattedHistory.length > 0) {
-          // Send chat message with full content array (supports images + text)
           const chat = model.startChat({ history: formattedHistory });
           const result = await chat.sendMessage(currentParts);
           response = await result.response;
         } else {
-          // Direct single-turn content generation
           const result = await model.generateContent(currentParts);
           response = await result.response;
         }
 
-        if (response && response.text) {
+        if (response) {
           resultText = response.text();
-          break; // Exit loop when successful
+          break;
         }
       } catch (err) {
-        console.warn(`Model ${modelName} failed:`, err.message || err);
+        console.error(`Model ${modelName} error:`, err);
         lastError = err;
       }
     }
@@ -105,25 +101,13 @@ module.exports = async (req, res) => {
       return res.status(200).json({ result: resultText });
     }
 
-    // Rate limiting check
-    const isRateLimit = lastError && (
-      lastError.status === 429 || 
-      JSON.stringify(lastError).includes("429") || 
-      JSON.stringify(lastError).includes("RESOURCE_EXHAUSTED")
-    );
-
-    if (isRateLimit) {
-      return res.status(429).json({
-        error: "Rate limit exceeded across available models. Please wait a minute and try again."
-      });
-    }
-
+    // 5. Diagnostics: Return actual underlying error if model calls fail
     return res.status(500).json({
-      error: "An error occurred while generating a response. Please try again."
+      error: lastError?.message || "An error occurred while generating a response."
     });
 
   } catch (error) {
     console.error("Gemini Backend Error:", error);
-    return res.status(500).json({ error: "Internal server error." });
+    return res.status(500).json({ error: error?.message || "Internal server error." });
   }
 };
